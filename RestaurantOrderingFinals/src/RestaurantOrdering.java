@@ -1,166 +1,25 @@
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
-
-// One item on the menu
-class MenuItem {
-    private final int id;
-    private final String name;
-    private final String category;
-    private final double price;
-
-    public MenuItem(int id, String name, String category, double price) {
-        this.id = id;
-        this.name = name;
-        this.category = category;
-        this.price = price;
-    }
-
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public String getCategory() { return category; }
-    public double getPrice() { return price; }
-
-    @Override
-    public String toString() {
-        return String.format("%-3d %-25s %-10s %,8.2f", id, name, category, price);
-    }
-}
-
-// One line in an order: an item and how many were ordered
-class OrderLine {
-    private final MenuItem item;
-    private int quantity;
-
-    public OrderLine(MenuItem item, int quantity) {
-        this.item = item;
-        this.quantity = quantity;
-    }
-
-    public MenuItem getItem() { return item; }
-    public int getQuantity() { return quantity; }
-    public void addQuantity(int amount) { this.quantity += amount; }
-    public double getSubtotal() { return item.getPrice() * quantity; }
-}
-
-// The customer's current order
-class Order {
-    private final List<OrderLine> lines = new ArrayList<>();
-
-    // Discount details (only one discount can be active at a time)
-    private String discountName = "None";
-    private double discountRate = 0.0;   // 0.20 means 20%
-    private String discountId = "";
-
-    public void addItem(MenuItem item, int quantity) {
-        // If the item is already in the order, just increase the quantity
-        for (OrderLine line : lines) {
-            if (line.getItem().getId() == item.getId()) {
-                line.addQuantity(quantity);
-                return;
-            }
-        }
-        lines.add(new OrderLine(item, quantity));
-    }
-
-    public boolean removeItem(int itemId) {
-        return lines.removeIf(line -> line.getItem().getId() == itemId);
-    }
-
-    public boolean isEmpty() { return lines.isEmpty(); }
-
-    // Total BEFORE the discount
-    public double getSubtotal() {
-        double total = 0;
-        for (OrderLine line : lines) {
-            total += line.getSubtotal();
-        }
-        return total;
-    }
-
-    // Discount methods
-    public void setDiscount(String name, double rate, String id) {
-        discountName = name;
-        discountRate = rate;
-        discountId = id;
-    }
-
-    public void clearDiscount() {
-        discountName = "None";
-        discountRate = 0.0;
-        discountId = "";
-    }
-
-    public boolean hasDiscount() { return discountRate > 0; }
-
-    public double getDiscountAmount() { return getSubtotal() * discountRate; }
-
-    // Total AFTER the discount (this is what the customer pays)
-    public double getTotal() { return getSubtotal() - getDiscountAmount(); }
-
-    // Shows only the last 4 characters of the ID, e.g. ****5678
-    private String maskId(String id) {
-        if (id.length() <= 4) {
-            return id;
-        }
-        return "****" + id.substring(id.length() - 4);
-    }
-
-    public void clear() {
-        lines.clear();
-        clearDiscount();
-    }
-
-    public void display() {
-        if (lines.isEmpty()) {
-            System.out.println("Your order is empty.");
-            return;
-        }
-        System.out.println("\n--- Your Order ---");
-        for (OrderLine line : lines) {
-            System.out.printf("%-25s x%-3d %,10.2f%n",
-                    line.getItem().getName(), line.getQuantity(), line.getSubtotal());
-        }
-        System.out.printf("%-30s %,10.2f%n", "Subtotal:", getSubtotal());
-
-        if (hasDiscount()) {
-            int percent = (int) Math.round(discountRate * 100);
-            System.out.printf("%-30s %,10.2f%n",
-                    discountName + " (" + percent + "%):", -getDiscountAmount());
-            System.out.println("Discount ID: " + maskId(discountId));
-        }
-        System.out.printf("%-30s %,10.2f%n", "TOTAL:", getTotal());
-    }
-}
-
-// The restaurant's menu
-class Menu {
-    private final List<MenuItem> items = new ArrayList<>();
-
-    public void addItem(int id, String name, String category, double price) {
-        items.add(new MenuItem(id, name, category, price));
-    }
-
-    public MenuItem findItem(int id) {
-        for (MenuItem item : items) {
-            if (item.getId() == id) {
-                return item;
-            }
-        }
-        return null;
-    }
-
-    public void display() {
-        System.out.println("\n--- Menu ---");
-        System.out.printf("%-3s %-25s %-10s %8s%n", "ID", "Item", "Category", "Price");
-        for (MenuItem item : items) {
-            System.out.println(item);
-        }
-    }
-}
 
 public class RestaurantOrdering {
 
+    // ===================== MENU (parallel arrays) =====================
+    // The same position in each array belongs to the same dish.
+    // Example: position 0 = Chicken Adobo, Main, 180. The menu ID is position + 1.
+    private static final String[] ITEM_NAMES = {
+        "Chicken Adobo", "Sizzling Pork Sisig", "Sizzling Bangus", "Bulalo with Bone Marrow",
+        "Sinigang Na Hipon", "Pork Sinigang", "Garlic Rice", "Halo-Halo", "Iced Tea"
+    };
+    private static final String[] ITEM_CATEGORIES = {
+        "Main", "Main", "Main", "Main", "Main", "Main", "Side", "Dessert", "Drink"
+    };
+    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 30, 95, 50};
+
+    // ===================== THE CUSTOMER'S ORDER =====================
+    // How many of each dish was ordered. Same positions as the menu arrays,
+    // so orderQuantities[3] is the quantity of ITEM_NAMES[3] (Bulalo with Bone Marrow).
+    private static final int[] orderQuantities = new int[ITEM_NAMES.length];
+
+    // ===================== DISCOUNTS =====================
     // Discount types and their rates. Both arrays use the SAME positions:
     // index 0 = None (0%), index 1 = Senior Citizen (20%), and so on.
     private static final String[] DISCOUNT_NAMES = {"None", "Senior Citizen", "PWD", "Employee"};
@@ -175,24 +34,18 @@ public class RestaurantOrdering {
     // The customer only gets this many tries to enter a valid, registered ID
     private static final int MAX_ATTEMPTS = 3;
 
+    // The discount currently applied to the order (only one can be active at a time)
+    private static String discountName = "None";
+    private static double discountRate = 0.0;   // 0.20 means 20%
+    private static String discountId = "";
+
+    // ===================== PAYMENT =====================
     // Payment methods the customer can choose from (index 0 = Cash on Delivery)
     private static final String[] PAYMENT_METHODS = {"Cash on Delivery", "GCash", "Maya", "Credit/Debit Card"};
 
+    // ===================== MAIN MENU =====================
     public static void main(String[] args) {
-        Menu menu = new Menu();
-        Order order = new Order();
         Scanner scanner = new Scanner(System.in);
-
-        // Sample menu - change these to your own dishes
-        menu.addItem(1, "Chicken Adobo", "Main", 180);
-        menu.addItem(2, "Sizzling Pork Sisig", "Main", 155);
-        menu.addItem(3, "Sizzling Bangus", "Main", 130);
-        menu.addItem(4, "Bulalo with Bone Marrow", "Main", 240);
-        menu.addItem(5, "Sinigang Na Hipon", "Main", 180);
-        menu.addItem(6, "Pork Sinigang", "Main", 220);
-        menu.addItem(7, "Garlic Rice", "Side", 30);
-        menu.addItem(8, "Halo-Halo", "Dessert", 95);
-        menu.addItem(9, "Iced Tea", "Drink", 50);
 
         while (true) {
             System.out.println("\n===== RESTAURANT ORDERING =====");
@@ -209,49 +62,27 @@ public class RestaurantOrdering {
 
             switch (choice) {
                 case 1:
-                    menu.display();
+                    displayMenu();
                     break;
 
                 case 2:
-                    menu.display();
-                    System.out.print("Item ID: ");
-                    MenuItem item = menu.findItem(readInt(scanner));
-                    if (item == null) {
-                        System.out.println("Item not found.");
-                        break;
-                    }
-                    System.out.print("Quantity: ");
-                    int qty = readInt(scanner);
-                    if (qty <= 0) {
-                        System.out.println("Quantity must be at least 1.");
-                        break;
-                    }
-                    order.addItem(item, qty);
-                    System.out.println("Added " + qty + " x " + item.getName());
+                    addItemToOrder(scanner);
                     break;
 
                 case 3:
-                    order.display();
-                    if (!order.isEmpty()) {
-                        System.out.print("Item ID to remove: ");
-                        if (order.removeItem(readInt(scanner))) {
-                            System.out.println("Item removed.");
-                        } else {
-                            System.out.println("That item is not in your order.");
-                        }
-                    }
+                    removeItemFromOrder(scanner);
                     break;
 
                 case 4:
-                    order.display();
+                    displayOrder();
                     break;
 
                 case 5:
-                    applyDiscount(order, scanner);
+                    applyDiscount(scanner);
                     break;
 
                 case 6:
-                    checkout(order, scanner);
+                    checkout(scanner);
                     break;
 
                 case 7:
@@ -265,15 +96,152 @@ public class RestaurantOrdering {
         }
     }
 
+    // ===================== MENU METHODS =====================
+
+    // Prints every dish: ID, name, category and price
+    private static void displayMenu() {
+        System.out.println("\n--- Menu ---");
+        System.out.printf("%-3s %-25s %-10s %8s%n", "ID", "Item", "Category", "Price");
+        for (int i = 0; i < ITEM_NAMES.length; i++) {
+            System.out.printf("%-3d %-25s %-10s %,8.2f%n",
+                    i + 1, ITEM_NAMES[i], ITEM_CATEGORIES[i], ITEM_PRICES[i]);
+        }
+    }
+
+    // ===================== ORDER METHODS =====================
+
+    // Asks for a menu ID and quantity, then adds it to the order
+    private static void addItemToOrder(Scanner scanner) {
+        displayMenu();
+        System.out.print("Item ID: ");
+        int id = readInt(scanner);
+
+        // Validation: the ID must match a dish on the menu
+        if (id < 1 || id > ITEM_NAMES.length) {
+            System.out.println("Item not found.");
+            return;
+        }
+
+        System.out.print("Quantity: ");
+        int qty = readInt(scanner);
+        if (qty <= 0) {
+            System.out.println("Quantity must be at least 1.");
+            return;
+        }
+
+        // If the dish is already in the order, this just increases its quantity
+        orderQuantities[id - 1] += qty;
+        System.out.println("Added " + qty + " x " + ITEM_NAMES[id - 1]);
+    }
+
+    // Removes a dish from the order (sets its quantity back to 0)
+    private static void removeItemFromOrder(Scanner scanner) {
+        displayOrder();
+        if (isOrderEmpty()) {
+            return;   // displayOrder() already said the order is empty
+        }
+
+        System.out.print("Item ID to remove: ");
+        int id = readInt(scanner);
+
+        // The range check comes first, so we never read outside the array
+        if (id >= 1 && id <= ITEM_NAMES.length && orderQuantities[id - 1] > 0) {
+            orderQuantities[id - 1] = 0;
+            System.out.println("Item removed.");
+        } else {
+            System.out.println("That item is not in your order.");
+        }
+    }
+
+    // True if no dish has been ordered yet
+    private static boolean isOrderEmpty() {
+        for (int i = 0; i < orderQuantities.length; i++) {
+            if (orderQuantities[i] > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Total BEFORE the discount
+    private static double getSubtotal() {
+        double total = 0;
+        for (int i = 0; i < ITEM_PRICES.length; i++) {
+            total += ITEM_PRICES[i] * orderQuantities[i];
+        }
+        return total;
+    }
+
+    private static boolean hasDiscount() {
+        return discountRate > 0;
+    }
+
+    private static double getDiscountAmount() {
+        return getSubtotal() * discountRate;
+    }
+
+    // Total AFTER the discount (this is what the customer pays)
+    private static double getTotal() {
+        return getSubtotal() - getDiscountAmount();
+    }
+
+    private static void clearDiscount() {
+        discountName = "None";
+        discountRate = 0.0;
+        discountId = "";
+    }
+
+    // Empties the order and removes the discount (used after checkout)
+    private static void clearOrder() {
+        for (int i = 0; i < orderQuantities.length; i++) {
+            orderQuantities[i] = 0;
+        }
+        clearDiscount();
+    }
+
+    // Shows only the last 4 characters of the ID, e.g. ****5678
+    private static String maskId(String id) {
+        if (id.length() <= 4) {
+            return id;
+        }
+        return "****" + id.substring(id.length() - 4);
+    }
+
+    // Prints the dishes ordered, the subtotal, the discount and the total
+    private static void displayOrder() {
+        if (isOrderEmpty()) {
+            System.out.println("Your order is empty.");
+            return;
+        }
+        System.out.println("\n--- Your Order ---");
+        for (int i = 0; i < ITEM_NAMES.length; i++) {
+            if (orderQuantities[i] > 0) {
+                System.out.printf("%-25s x%-3d %,10.2f%n",
+                        ITEM_NAMES[i], orderQuantities[i], ITEM_PRICES[i] * orderQuantities[i]);
+            }
+        }
+        System.out.printf("%-30s %,10.2f%n", "Subtotal:", getSubtotal());
+
+        if (hasDiscount()) {
+            int percent = (int) Math.round(discountRate * 100);
+            System.out.printf("%-30s %,10.2f%n",
+                    discountName + " (" + percent + "%):", -getDiscountAmount());
+            System.out.println("Discount ID: " + maskId(discountId));
+        }
+        System.out.printf("%-30s %,10.2f%n", "TOTAL:", getTotal());
+    }
+
+    // ===================== DISCOUNT METHODS =====================
+
     // Lets the customer pick a discount and enter the required ID
-    private static void applyDiscount(Order order, Scanner scanner) {
+    private static void applyDiscount(Scanner scanner) {
         // Guide for the customer
         System.out.println("\n--- Discounts ---");
         System.out.println("You can inquire about your status discounts by using your Senior Citizen,");
         System.out.println("PWD or Employee Identification Card. Enter the ID number printed on your card.");
         System.out.println("Only one discount can be used per order.");
 
-        if (order.isEmpty()) {
+        if (isOrderEmpty()) {
             System.out.println("\nAdd items to your order first.");
             return;
         }
@@ -296,7 +264,7 @@ public class RestaurantOrdering {
 
         // "None" removes any discount that was applied before
         if (index == 0) {
-            order.clearDiscount();
+            clearDiscount();
             System.out.println("Discount removed.");
             return;
         }
@@ -335,9 +303,13 @@ public class RestaurantOrdering {
             return;
         }
 
-        order.setDiscount(type, DISCOUNT_RATES[index], id);
+        // Save the discount so displayOrder() and getTotal() can use it
+        discountName = type;
+        discountRate = DISCOUNT_RATES[index];
+        discountId = id;
+
         showDiscountBanner(type, DISCOUNT_RATES[index]);
-        order.display();
+        displayOrder();
     }
 
     // Picks the saved-ID array that matches the discount type
@@ -407,17 +379,19 @@ public class RestaurantOrdering {
         System.out.println(border);
     }
 
+    // ===================== CHECKOUT METHODS =====================
+
     // Checkout steps: delivery address -> payment method -> confirm -> receipt
-    private static void checkout(Order order, Scanner scanner) {
-        if (order.isEmpty()) {
+    private static void checkout(Scanner scanner) {
+        if (isOrderEmpty()) {
             System.out.println("Your order is empty.");
             return;
         }
 
-        order.display();
+        displayOrder();
 
         // Reminder in case the customer forgot to use a discount
-        if (!order.hasDiscount()) {
+        if (!hasDiscount()) {
             System.out.println("Tip: choose option 5 first if you have a Senior Citizen, PWD or Employee ID.");
         }
 
@@ -439,7 +413,7 @@ public class RestaurantOrdering {
         String methodName = PAYMENT_METHODS[method];
         boolean isCash = (method == 0);   // index 0 is Cash on Delivery
 
-        double total = order.getTotal();
+        double total = getTotal();
         double cashGiven = 0;
         double change = 0;
 
@@ -472,9 +446,9 @@ public class RestaurantOrdering {
 
         // Receipt
         System.out.println("\n========== ORDER CONFIRMED ==========");
-        order.display();
-        if (order.hasDiscount()) {
-            System.out.printf("You saved %,.2f with your discount!%n", order.getDiscountAmount());
+        displayOrder();
+        if (hasDiscount()) {
+            System.out.printf("You saved %,.2f with your discount!%n", getDiscountAmount());
         }
         System.out.println("Deliver to:     " + address);
         System.out.println("Payment method: " + methodName);
@@ -483,7 +457,7 @@ public class RestaurantOrdering {
             System.out.printf("Change:         %,.2f%n", change);
         }
         System.out.println("\nThank you for your order! Your food is on the way.");
-        order.clear();
+        clearOrder();
     }
 
     // Asks for the delivery address. Returns "" if the customer cancels.
@@ -540,6 +514,8 @@ public class RestaurantOrdering {
             System.out.println("Amount is not enough.");
         }
     }
+
+    // ===================== INPUT HELPERS =====================
 
     // Same idea as readInt, but for amounts with decimals (e.g. 500 or 500.50)
     private static double readDouble(Scanner scanner) {
