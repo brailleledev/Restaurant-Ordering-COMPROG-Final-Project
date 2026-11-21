@@ -7,12 +7,20 @@ public class RestaurantOrdering {
     // Example: position 0 = Chicken Adobo, Main, 180. The menu ID is position + 1.
     private static final String[] ITEM_NAMES = {
         "Chicken Adobo", "Sizzling Pork Sisig", "Sizzling Bangus", "Bulalo with Bone Marrow",
-        "Sinigang Na Hipon", "Pork Sinigang", "Garlic Rice", "Halo-Halo", "Iced Tea"
+        "Sinigang Na Hipon", "Pork Sinigang", "Lumpiang Shanghai", "Lumpiang Togue", 
+        "Kare-kare", "Tortang Talong", "Plain Rice", "Garlic Rice", 
+        "Halo-Halo", "Iced Tea"
     };
     private static final String[] ITEM_CATEGORIES = {
-        "Main", "Main", "Main", "Main", "Main", "Main", "Side", "Dessert", "Drink"
+        "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Side", "Side", "Side", "Side", "Side", "Dessert", "Drink"
     };
-    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 45, 95, 50};
+    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 50 , 40, 210, 60, 45, 45, 95, 50};
+    
+    private static final String[] ITEM_UNITS = {
+    	    "", "", "", "", "", "",    // IDs 1-6
+    	    "/ each", "/ each",            // IDs 7-8 (lumpia)
+    	    "", "/ each", "", "", "", ""     // IDs 9-14
+    };
 
     // ===================== THE CUSTOMER'S ORDER =====================
     // How many of each dish was ordered. Same positions as the menu arrays,
@@ -103,8 +111,8 @@ public class RestaurantOrdering {
         System.out.println("\n--- Menu ---");
         System.out.printf("%-3s %-25s %-10s %8s%n", "ID", "Item", "Category", "Price");
         for (int i = 0; i < ITEM_NAMES.length; i++) {
-            System.out.printf("%-3d %-25s %-10s %,8.2f%n",
-                    i + 1, ITEM_NAMES[i], ITEM_CATEGORIES[i], ITEM_PRICES[i]);
+        	System.out.printf("%-3d %-25s %-10s %,8.2f %s%n",
+        	        i + 1, ITEM_NAMES[i], ITEM_CATEGORIES[i], ITEM_PRICES[i], ITEM_UNITS[i]);
         }
     }
 
