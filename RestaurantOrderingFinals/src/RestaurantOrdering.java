@@ -12,7 +12,7 @@ public class RestaurantOrdering {
     private static final String[] ITEM_CATEGORIES = {
         "Main", "Main", "Main", "Main", "Main", "Main", "Side", "Dessert", "Drink"
     };
-    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 30, 95, 50};
+    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 45, 95, 50};
 
     // ===================== THE CUSTOMER'S ORDER =====================
     // How many of each dish was ordered. Same positions as the menu arrays,
