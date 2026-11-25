@@ -1,25 +1,40 @@
 import java.util.Scanner;
 
 public class RestaurantOrdering {
+	
+	// UPDATE: Added dishes with prices on the menu, adjusted the widths of the menu texts
 
     // ===================== MENU (parallel arrays) =====================
     // The same position in each array belongs to the same dish.
     // Example: position 0 = Chicken Adobo, Main, 180. The menu ID is position + 1.
     private static final String[] ITEM_NAMES = {
-        "Chicken Adobo", "Sizzling Pork Sisig", "Sizzling Bangus", "Bulalo with Bone Marrow",
-        "Sinigang Na Hipon", "Pork Sinigang", "Lumpiang Shanghai", "Lumpiang Togue", 
-        "Kare-kare", "Tortang Talong", "Plain Rice", "Garlic Rice", 
-        "Halo-Halo", "Iced Tea"
+        "Chicken Adobo", "Sizzling Pork Sisig", "Sizzling Bangus", "Bulalo with Bone Marrow", // Main IDs 1-4
+        "Sinigang Na Hipon", "Pork Sinigang", "Kare-kare", // Main IDs 5-7
+        "Afritadang Manok", "Pritong Letchon", "Bicol Express", // Main IDs 8-10
+        "Chopsuey", "Pinakbet", // Main IDs 11-12
+        "Plain Rice", "Garlic Fried Rice", "Lumpiang Shanghai", "Lumpiang Togue", "Tortang Talong", // Sides IDs 13-17
+        "Halo-Halo", "Leche Flan", "Ube Halaya", "Turon", "Buko Pie", "Maja Blanca", // Dessert IDs 18-23
+        "Salabat (Hot/Cold)", "Sago't Gulaman", "Calamansi Juice", "Buko Juice", "Kapeng Barako", "Tsokolate (Tablea Hot Choco)", "Taho"// Drinks 24-30
     };
     private static final String[] ITEM_CATEGORIES = {
-        "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Main", "Side", "Side", "Side", "Side", "Side", "Dessert", "Drink"
+        "Main", "Main", "Main", "Main", "Main", // Main IDs 1-5
+        "Main", "Main", "Main", "Main", "Main", "Main", "Main", // Main IDs 6-12
+        "Side", "Side", "Side", "Side", "Side", // Side IDs 13-17
+        "Dessert", "Dessert", "Dessert", "Dessert", "Dessert", "Dessert", // Dessert IDs 18-23
+        "Drinks", "Drinks", "Drinks", "Drinks", "Drinks", "Drinks", "Drinks" // Drink IDs 24-30
     };
-    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, 50 , 40, 210, 60, 45, 45, 95, 50};
+    private static final double[] ITEM_PRICES = {180, 155, 130, 240, 180, 220, // Main Category Prices ID 1-6
+    		210, 150, 210, 160, 130, 150, // Main Category Prices ID 7-12
+    		50, 45, 80, 50, 70,// Side Category Prices ID 13-17
+    		100, 150, 160, 145, 200, 180, // Dessert ID Category Prices 18-23
+    		70, 90, 80, 75, 100, 130, 95 // Drink IDs 24-30
+    }; 
+    		
     
-    private static final String[] ITEM_UNITS = {
-    	    "", "", "", "", "", "",    // IDs 1-6
-    	    "/ each", "/ each",            // IDs 7-8 (lumpia)
-    	    "", "/ each", "", "", "", ""     // IDs 9-14
+    private static final String[] ITEM_UNITS = { "", "", "", "", "", "", "", "", "", "", "", "",
+    		"/ cup", "/ cup", "/ serving", "/ piece", "/ piece",
+    		"/ serving", "/ serving", "/ serving", "/ serving", "/ serving", "/ serving",
+    		"", "", "", "", "", "", "", ""
     };
 
     // ===================== THE CUSTOMER'S ORDER =====================
@@ -109,9 +124,9 @@ public class RestaurantOrdering {
     // Prints every dish: ID, name, category and price
     private static void displayMenu() {
         System.out.println("\n--- Menu ---");
-        System.out.printf("%-3s %-25s %-10s %8s%n", "ID", "Item", "Category", "Price");
+        System.out.printf("%-3s %-30s %-10s %8s%n", "ID", "Item", "Category", "Price");
         for (int i = 0; i < ITEM_NAMES.length; i++) {
-        	System.out.printf("%-3d %-25s %-10s %,8.2f %s%n",
+        	System.out.printf("%-3d %-30s %-10s %,8.2f %s%n",
         	        i + 1, ITEM_NAMES[i], ITEM_CATEGORIES[i], ITEM_PRICES[i], ITEM_UNITS[i]);
         }
     }
@@ -224,19 +239,19 @@ public class RestaurantOrdering {
         System.out.println("\n--- Your Order ---");
         for (int i = 0; i < ITEM_NAMES.length; i++) {
             if (orderQuantities[i] > 0) {
-                System.out.printf("%-25s x%-3d %,10.2f%n",
+                System.out.printf("%-30s x%-3d %,10.2f%n",              
                         ITEM_NAMES[i], orderQuantities[i], ITEM_PRICES[i] * orderQuantities[i]);
             }
         }
-        System.out.printf("%-30s %,10.2f%n", "Subtotal:", getSubtotal());
+        System.out.printf("%-35s %,10.2f%n", "Subtotal:", getSubtotal());   
 
         if (hasDiscount()) {
             int percent = (int) Math.round(discountRate * 100);
-            System.out.printf("%-30s %,10.2f%n",
+            System.out.printf("%-35s %,10.2f%n",                        
                     discountName + " (" + percent + "%):", -getDiscountAmount());
             System.out.println("Discount ID: " + maskId(discountId));
         }
-        System.out.printf("%-30s %,10.2f%n", "TOTAL:", getTotal());
+        System.out.printf("%-35s %,10.2f%n", "TOTAL:", getTotal());         
     }
 
     // ===================== DISCOUNT METHODS =====================
